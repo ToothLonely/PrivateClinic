@@ -12,7 +12,7 @@ const icons = {
   call: '<path d="m4 3 4-.5 2 5-3 2c2 4 4 6 8 8l2-3 5 2-.5 4c-1 5-9 1-14-4S0 4 4 3Z"/>'
 };
 const icon = name => '<svg viewBox="0 0 24 24" aria-hidden="true">'+icons[name]+'</svg>';
-const pages = {catalog:'Клиники', detail:'Карточка клиники', saved:'Избранное', profile:'Профиль', personal:'Личные данные', registration:'Регистрация', history:'История приёмов', studies:'Исследования', labs:'Анализы', booking:'Запись', unavailable:'Запись недоступна', login:'Вход', code:'Код из письма', slot:'После MVP · Приём', confirmed:'Подробности записи', reschedule:'Перенос приёма'};
+const pages = {catalog:'Клиники', detail:'Карточка клиники', saved:'Избранное', profile:'Профиль', personal:'Личные данные', registration:'Регистрация', history:'История приёмов', studies:'Исследования', labs:'Анализы', booking:'Запись', login:'Вход', code:'Код из письма', slot:'После MVP · Приём', confirmed:'Подробности записи', reschedule:'Перенос приёма'};
 const clinics = [
   ['Феникс Медика','Многопрофильная клиника','50 лет ВЛКСМ, 91'],
   ['DL Med','Многопрофильная клиника','50 лет ВЛКСМ, 18В'],
@@ -33,7 +33,7 @@ const radii = ['Весь город','До 5 км','До 10 км','До 15 км'
 const demoDistances = [1,4,2,7,9,6,12,14,16,3,11,13];
 const params = new URLSearchParams(location.search);
 const requestedScreen = params.get('screen');
-let page = Object.hasOwn(pages, requestedScreen) ? requestedScreen : ({cancel:'confirmed', settings:'profile', medical:'booking', location:'catalog'}[requestedScreen] || 'catalog');
+let page = Object.hasOwn(pages, requestedScreen) ? requestedScreen : ({unavailable:'booking', cancel:'confirmed', settings:'profile', medical:'booking', location:'catalog'}[requestedScreen] || 'catalog');
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 const themeNames = {system:'Системная',light:'Светлая',dark:'Тёмная'};
 let themeChoice = params.get('theme');
@@ -120,22 +120,22 @@ function catalogue() {
 
 function clinicDetails() {
   const [name, category, address] = clinics[current];
-  return `<div class="detail-toolbar">${back(origin)}
-    <button class="favorite" data-save aria-label="В избранном" aria-pressed="${favorites.has(current)}">${icon('heart')}</button>
-  </div>
-  <h1>${name}</h1><p class="muted">${category}</p>
-  <h2>Адрес филиала</h2><p>${icon('pin')} Ставрополь, ${address}</p>
-  <div class="contact-actions">
-    <button class="secondary" data-contact="call">Позвонить</button>
-    <button class="secondary" data-contact="site">Сайт клиники</button>
-  </div><p class="notice" id="message" role="status"></p>`;
+  return `<div class="clinic-heading">${back(origin)}<h1>${name}</h1>
+    <button class="favorite" data-save aria-label="В избранном" aria-pressed="${favorites.has(current)}">${icon('heart')}</button></div>
+    <div class="clinic-body"><section class="gallery" aria-label="Фотографии клиники">
+      <h2>Фотографии</h2><div class="photo-grid" aria-hidden="true"><span></span><span></span><span></span></div></section>
+    <section class="clinic-info"><h2>Профиль клиники</h2><p>${category}</p>
+      <h2>Адрес филиала</h2><p>${icon('pin')} Ставрополь, ${address}</p>
+      <div class="contact-actions"><button class="secondary" data-contact="call">Позвонить</button>
+      <button class="secondary" data-contact="site">Сайт клиники</button></div>
+      <p class="notice" id="message" role="status"></p></section></div>`;
 }
 
 function profile() {
   return `<section class="account-section"><div class="identity"><span id="avatar" aria-hidden="true"></span><h1 id="display-name"></h1></div>
-    ${go('Личные данные', 'personal', 'item')}
+    </section><section class="preferences">${go('Личные данные', 'personal', 'item')}
     ${go('Избранное <small>'+favorites.size+'</small>', 'saved', 'item')}
-    </section><section class="preferences"><h2 class="section-title theme-heading" id="theme-heading">Тема</h2>
+    <h2 class="section-title theme-heading" id="theme-heading">Тема</h2>
     <div class="theme-options" role="group" aria-labelledby="theme-heading">${Object.entries(themeNames).map(([value,label])=>
       `<button class="theme-card" data-mode="${value}" aria-pressed="${themeChoice===value}"><span class="swatch" aria-hidden="true"></span>${label}</button>`).join('')}</div>
     <button class="sign-out logout" data-logout>${icon('logout')}Выйти</button></section>`;
@@ -146,11 +146,11 @@ function personalData() {
     <dt>Электронная почта</dt><dd id="personal-email"></dd></dl>`;
 }
 function registration() {
-  return `${back('login')}<h1>Как вас зовут?</h1><form id="registration-form">
+  return `<h1>Введите данные</h1><form id="registration-form">
     <label class="field">Фамилия<input name="last" autocomplete="family-name" required maxlength="80"></label>
     <label class="field">Имя<input name="first" autocomplete="given-name" required maxlength="80"></label>
     <label class="field">Отчество (при наличии)<input name="middle" autocomplete="additional-name" maxlength="80"></label>
-    <button class="primary">Продолжить</button></form>`;
+    </form>`;
 }
 function selectedVisit() {
   return account.visits.find(v => v.id === selectedId) || account.visits[0];
@@ -170,8 +170,8 @@ function bookings() {
   const dots = multiple ? `<div class="visit-dots">${visits.map((v,i)=>
     `<button data-slide="${i}" aria-label="Показать запись ${i+1}"></button>`).join('')}</div>` : '';
   return `<section><h2 class="section-title">Текущие записи</h2>
-    ${frame}${dots}${go('Записаться','unavailable','primary book')}
-    </section><section><h2 class="section-title">Медкарта</h2>
+    ${frame}${dots}
+    </section><button class="primary book" data-unavailable>Записаться</button><section class="records"><h2 class="section-title">Медкарта</h2>
     ${['history','studies','labs'].map(id=>go(pages[id],id,'item')).join('')}</section>`;
 }
 function initCarousel() {
@@ -252,18 +252,18 @@ function initDates() {
   updateTimes();
 }
 const cancelDialog = $('cancel-dialog');
-function positionDialog() {
+function positionDialog(dialog) {
   const bounds = $('phone').getBoundingClientRect();
-  cancelDialog.style.left = (bounds.left+bounds.width/2)+'px';
-  cancelDialog.style.top = (bounds.top+bounds.height/2)+'px';
-  cancelDialog.style.width = Math.min(340,bounds.width-32)+'px';
+  dialog.style.left = (bounds.left+bounds.width/2)+'px';
+  dialog.style.top = (bounds.top+bounds.height/2)+'px';
+  dialog.style.width = Math.min(340,bounds.width-32)+'px';
 }
-function openCancellation() {
-  positionDialog();
-  cancelDialog.showModal();
+function openDialog(dialog) {
+  positionDialog(dialog);
+  dialog.showModal();
 }
-window.addEventListener('resize',()=>{ if (cancelDialog.open) positionDialog(); });
-window.addEventListener('scroll',()=>{ if (cancelDialog.open) positionDialog(); },{passive:true});
+window.addEventListener('resize',()=>{ const dialog=document.querySelector('dialog[open]'); if (dialog) positionDialog(dialog); });
+window.addEventListener('scroll',()=>{ const dialog=document.querySelector('dialog[open]'); if (dialog) positionDialog(dialog); },{passive:true});
 function content() {
   switch(page) {
     case 'catalog': return catalogue();
@@ -274,11 +274,10 @@ function content() {
     case 'personal': return personalData();
     case 'registration': return registration();
     case 'history': case 'studies': case 'labs':
-      return back('booking')+'<h1>'+pages[page]+'</h1><p class="muted">Функция появится позже.</p>';
-    case 'unavailable': return back('booking')+'<h1>Запись сейчас недоступна</h1><p>Можно позвонить в клинику по телефону из её карточки.</p>'+go('Открыть каталог','catalog');
+      return '<div class="record-heading">'+back('booking')+'<h1>'+pages[page]+'</h1></div><p class="later muted">Функция появится позже.</p>';
     case 'login': return '<h1>Вход</h1><p>Введите почту, чтобы сохранить избранное на всех устройствах.</p><form id="login-form"><label class="field">Электронная почта<input type="email" id="email" placeholder="anna@example.com" required></label><button class="primary">Получить код</button></form>';
     case 'code': return back('login')+'<h1>Код из письма</h1><p>Введите код для <b id="account"></b>.</p><form id="code-form"><label class="field">Одноразовый код<input class="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required></label><button class="primary">Войти</button></form><p class="notice">Вход сохранится на этом устройстве.</p>';
-    case 'slot': return '<h1>Записаться на приём</h1><h2>Первичная консультация</h2><p>Терапевт · Демо-клиника</p><h2>26 ноября</h2><div class="split">'+options(['09:00','10:30','14:00'],['09:00','10:30','14:00'].indexOf(time),'time')+'</div>'+go('Подтвердить запись','confirmed','primary');
+    case 'slot': return '<h1>Записаться на приём</h1><h2>Первичная консультация</h2><p>Терапевт · Демо-клиника</p><h2>26 ноября</h2><div class="split">'+options(['09:00','10:30','14:00'],['09:00','10:30','14:00'].indexOf(time),'time')+'</div>';
     case 'confirmed': case 'reschedule': return visitPage();
 
   }
@@ -296,6 +295,10 @@ function render(restoreY=0) {
   $('query').value = query;
   $('content').innerHTML = content();
   $('visit-actions').hidden = page!=='confirmed' || !selectedVisit();
+  const formActions=$('form-actions');
+  formActions.hidden=!['registration','slot'].includes(page);
+  formActions.innerHTML=page==='registration' ? '<button class="primary booking-color" form="registration-form">Продолжить</button>' :
+    page==='slot' ? go('Выбрать','confirmed','primary booking-color') : '';
   $('save-bar').hidden = !$('dates');
   initDates();
   initCarousel();
@@ -377,7 +380,9 @@ document.addEventListener('click',e=>{
     navigate('login');
     return;
   }
-  if (d.go) navigate(d.go);
+  if ('unavailable' in d) openDialog($('unavailable-dialog'));
+  else if ('dismiss' in d) btn.closest('dialog').close();
+  else if (d.go) {btn.closest('dialog')?.close(); navigate(d.go);}
   else if ('visit' in d) { selectedId=Number(d.visit); navigate('confirmed'); }
   else if ('slide' in d) {
     const track = $('visit-track');
@@ -395,7 +400,7 @@ document.addEventListener('click',e=>{
     document.querySelectorAll('[data-newtime]').forEach(el=>el.setAttribute('aria-pressed',String(el===btn)));
     updateSave();
   }
-  else if ('openCancel' in d) openCancellation();
+  else if ('openCancel' in d) openDialog(cancelDialog);
   else if ('keep' in d) cancelDialog.close();
   else if ('reschedule' in d) {
     Object.assign(selectedVisit(),{day:draftDay,time:draftTime});
@@ -461,10 +466,26 @@ document.addEventListener('submit',e=>{
 $('page').innerHTML=Object.entries(pages).map(([id,label])=>'<option value="'+id+'">'+label+'</option>').join('');
 $('city').innerHTML=icon('pin')+'Ставрополь';
 $('lens').innerHTML=icon('search');
-$('page').onchange=e=>navigate(e.target.value);
+$('layout').value=params.get('layout')==='phone'?'phone':'auto';
+$('layout').onchange=e=>{
+  const mobile=e.target.value==='phone';
+  $('adaptive-style').media=mobile?'not all':'(min-width: 680px)';
+  const url=new URL(location.href);
+  url.searchParams.set('layout',e.target.value);
+  history.replaceState(null,'',url);
+};
+$('page').onchange=e=>{
+  if (['confirmed','reschedule'].includes(e.target.value) && !selectedVisit()) {
+    const url=new URL(location.href);
+    url.searchParams.set('screen',e.target.value);
+    url.searchParams.set('theme',themeChoice);
+    location.assign(url);
+  } else navigate(e.target.value);
+};
 $('theme').onchange=e=>chooseTheme(e.target.value);
 render();
-if (requestedScreen==='cancel' && selectedVisit()) openCancellation();
+if (requestedScreen==='unavailable') openDialog($('unavailable-dialog'));
+if (requestedScreen==='cancel' && selectedVisit()) openDialog(cancelDialog);
 if (page === 'catalog' && (params.get('menu') === 'type' || requestedScreen === 'filters')) {
   document.querySelector('[data-filter="type"]').open = true;
 }

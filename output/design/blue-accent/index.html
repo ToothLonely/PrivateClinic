@@ -14,6 +14,7 @@
 <main>
   <aside aria-label="Просмотр макета">
     <strong>Синий акцент</strong>
+    <label>Формат <select id="layout"><option value="auto">По ширине окна</option><option value="phone">Телефон</option></select></label>
     <label>Экран <select id="page"></select></label>
     <label>Тема <select id="theme"><option value="system">Системная</option><option value="light">Светлая</option><option value="dark">Тёмная</option></select></label>
     <a href="overview.html">Все экраны</a>
@@ -30,6 +31,13 @@
       <button class="secondary logout" data-open-cancel>Отменить</button>
     </div>
     <div id="save-bar" class="bottom-actions" hidden><button class="primary booking-color" data-reschedule>Сохранить</button></div>
+    <div id="form-actions" class="bottom-actions" hidden></div>
+    <dialog id="unavailable-dialog" aria-labelledby="unavailable-title">
+      <h2 id="unavailable-title">Запись сейчас недоступна</h2>
+      <p>В каталоге можно найти клинику и позвонить в её регистратуру.</p>
+      <button class="primary booking-color" data-go="catalog">Открыть каталог</button>
+      <button class="secondary" data-dismiss>Закрыть</button>
+    </dialog>
     <dialog id="cancel-dialog" aria-labelledby="cancel-question">
       <h2 id="cancel-question">Вы уверены, что хотите отменить запись?</h2>
       <div class="dialog-actions">

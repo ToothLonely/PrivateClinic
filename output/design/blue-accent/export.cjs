@@ -20,8 +20,11 @@ async function exportScreens() {
     previews.push({key:'booking-upcoming',label:'Текущие записи · один приём',route:'screen=booking&example=upcoming'});
     previews.push({key:'booking-empty',label:'Текущие записи · пустой список',route:'screen=booking&example=empty'});
     previews.push({key:'cancel',label:'Подтверждение отмены',route:'screen=cancel'});
-    for(const key of ['catalog','booking','profile']){
-      previews.push({key:'wide-'+key,label:'Широкий экран · '+screens.find(([id])=>id===key)[1],route:'screen='+key,wide:true});
+    previews.push({key:'unavailable',label:'Диалог · запись сейчас недоступна',route:'screen=unavailable'});
+    const mobileCount=previews.length;
+    for(const preview of previews.slice()){
+      if(['booking-upcoming','booking-empty','catalog-types'].includes(preview.key)) continue;
+      previews.push({...preview,key:'wide-'+preview.key,route:preview.key==='booking'?'screen=booking':preview.route,wide:true});
     }
     const rows=[];
     await mkdir(path.join(__dirname,'screens'),{recursive:true});
@@ -31,7 +34,7 @@ async function exportScreens() {
       const pictures=[];
       for(const [theme,caption] of [['light','Светлая'],['dark','Тёмная']]){
         await page.goto(url+'?'+query+'&theme='+theme);
-        const mainTab=['catalog','catalog-types','profile','booking','booking-upcoming','booking-empty'].includes(key)||wide;
+        const mainTab=['catalog','catalog-types','profile','booking','unavailable'].includes(new URLSearchParams(route).get('screen'));
         assert.equal(await page.locator('#phone header').isVisible(),mainTab);
         assert.equal(await page.locator('#phone footer').isVisible(),mainTab);
         const filename='screens/'+key+'-'+theme+'.png';
@@ -40,7 +43,7 @@ async function exportScreens() {
       }
       rows.push('<section><h2>'+label+'</h2><div>'+pictures.join('')+'</div></section>');
     }
-    await writeFile(path.join(__dirname,'overview.html'),'<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Синий акцент · Экраны</title><style>*{box-sizing:border-box}body{margin:0;background:#eeece7;color:#182336;font:16px system-ui}main{max-width:780px;margin:auto;padding:24px 14px}h1{font-size:30px}section{margin:32px 0 48px}section div{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}img{display:block;width:100%;border-radius:18px}figcaption{margin-top:6px;font-size:14px}a{color:#254d75}</style><main><a href="index.html">Открыть прототип</a><h1>Синий акцент</h1>'+rows.join('')+'</main></html>');
+    await writeFile(path.join(__dirname,'overview.html'),'<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Синий акцент · Экраны</title><style>*{box-sizing:border-box}body{margin:0;background:#eeece7;color:#182336;font:16px system-ui}main{max-width:780px;margin:auto;padding:24px 14px}h1{font-size:30px}section{margin:32px 0 48px}section div{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}img{display:block;width:100%;border-radius:18px}figcaption{margin-top:6px;font-size:14px}a{color:#254d75}</style><main><a href="index.html">Открыть прототип</a><h1>Синий акцент</h1><a href="#mobile">Телефон</a> · <a href="#wide">Широкий экран</a><h2 id="mobile">Телефон</h2>'+rows.slice(0,mobileCount).join('')+'<h2 id="wide">Широкий экран</h2>'+rows.slice(mobileCount).join('')+'</main></html>');
     await page.goto(url+'?layout=phone');
     const scroll=page.locator('#scroll');
     for(const theme of ['light','dark']){
@@ -84,8 +87,9 @@ async function exportScreens() {
     assert.notEqual(await favorite.getAttribute('aria-pressed'),before);
     await page.selectOption('#page','booking');
     await page.getByRole('button',{name:'Записаться',exact:true}).click();
-    assert.equal(await page.getByRole('heading',{level:1}).innerText(),'Запись сейчас недоступна');
-    await page.getByRole('button',{name:'Назад',exact:true}).click();
+    assert(await page.getByRole('dialog',{name:'Запись сейчас недоступна'}).isVisible());
+    await page.getByRole('button',{name:'Открыть каталог'}).click();
+    assert.equal(await page.locator('#page').inputValue(),'catalog');
     await page.locator('nav').getByRole('button',{name:'Профиль'}).click();
     await page.getByRole('button',{name:'Тёмная',exact:true}).click();
     assert.equal(await phone.getAttribute('data-theme'),'dark');
@@ -115,7 +119,7 @@ async function exportScreens() {
     assert.equal(await page.getByRole('button',{name:'Назад'}).innerText(),'');
     await page.selectOption('#page','slot');
     await page.getByRole('button',{name:'14:00',exact:true}).click();
-    await page.getByRole('button',{name:'Подтвердить запись'}).click();
+    await page.getByRole('button',{name:'Выбрать'}).click();
     await page.getByRole('button',{name:'Назад'}).click();
     assert.match(await page.locator('.visit-slide').innerText(),/14:00/);
     for (const theme of ['light','dark']) {
