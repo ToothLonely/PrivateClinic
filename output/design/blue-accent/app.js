@@ -123,12 +123,12 @@ function clinicDetails() {
   return `<div class="clinic-heading">${back(origin)}<h1>${name}</h1>
     <button class="favorite" data-save aria-label="В избранном" aria-pressed="${favorites.has(current)}">${icon('heart')}</button></div>
     <div class="clinic-body"><section class="gallery" aria-label="Фотографии клиники">
-      <h2>Фотографии</h2><div class="photo-strip" tabindex="0" role="group" aria-label="Фотографии филиала, горизонтальная прокрутка">${[1,2,3].map(n => `<span role="img" aria-label="Место для фотографии ${n}"></span>`).join('')}</div></section>
-    <section class="clinic-info"><h2>Профиль клиники</h2><p>${category}</p>
+      <div class="photo-strip" tabindex="0" role="group" aria-label="Фотографии филиала, горизонтальная прокрутка">${[1,2,3].map(n => `<span role="img" aria-label="Место для фотографии ${n}"></span>`).join('')}</div></section>
+    <section class="clinic-info"><div><h2>Профиль клиники</h2><p>${category}</p>
       <h2>Адрес филиала</h2><p>${icon('pin')} Ставрополь, ${address}</p>
       <div class="contact-actions"><button class="secondary" data-contact="call">Позвонить</button>
       <button class="secondary" data-contact="site">Сайт клиники</button></div>
-      <p class="notice" id="message" role="status"></p></section></div>`;
+      <p class="notice" id="message" role="status"></p></div></section></div>`;
 }
 
 function profile() {
@@ -141,7 +141,7 @@ function profile() {
     <button class="sign-out logout" data-logout>${icon('logout')}Выйти</button></section>`;
 }
 function personalData() {
-  return `${back('profile')}<h1>Личные данные</h1>
+  return `<div class="record-heading">${back('profile')}<h1>Личные данные</h1></div>
     <dl class="personal-data"><dt>Фамилия, имя, отчество</dt><dd id="full-name"></dd>
     <dt>Электронная почта</dt><dd id="personal-email"></dd></dl>`;
 }
@@ -268,14 +268,14 @@ function content() {
   switch(page) {
     case 'catalog': return catalogue();
     case 'detail': return clinicDetails();
-    case 'saved': return back('profile')+'<h1>Избранное</h1>'+(rows([...favorites])||'<p>Сохраняйте клиники из их карточек.</p>'+go('К клиникам','catalog'));
+    case 'saved': return '<div class="record-heading">'+back('profile')+'<h1>Избранное</h1></div>'+(rows([...favorites])||'<p>Сохраняйте клиники из их карточек.</p>'+go('К клиникам','catalog'));
     case 'profile': return profile();
     case 'booking': return bookings();
     case 'personal': return personalData();
     case 'registration': return registration();
     case 'history': case 'studies': case 'labs':
       return '<div class="record-heading">'+back('booking')+'<h1>'+pages[page]+'</h1></div><p class="later muted">Функция появится позже.</p>';
-    case 'login': return '<h1>Вход</h1><p>Введите почту, чтобы сохранить избранное на всех устройствах.</p><form id="login-form"><label class="field">Электронная почта<input type="email" id="email" placeholder="anna@example.com" required></label><button class="primary">Получить код</button></form>';
+    case 'login': return '<h1>Вход</h1><p class="login-gap" aria-hidden="true"></p><form id="login-form"><label class="field">Электронная почта<input type="email" id="email" placeholder="anna@example.com" required></label><button class="primary">Получить код</button></form>';
     case 'code': return back('login')+'<h1>Код из письма</h1><p>Введите код для <b id="account"></b>.</p><form id="code-form"><label class="field">Одноразовый код<input class="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required></label><button class="primary">Войти</button></form><p class="notice">Вход сохранится на этом устройстве.</p>';
     case 'slot': return '<h1>Записаться на приём</h1><h2>Первичная консультация</h2><p>Терапевт · Демо-клиника</p><h2>26 ноября</h2><div class="split">'+options(['09:00','10:30','14:00'],['09:00','10:30','14:00'].indexOf(time),'time')+'</div>';
     case 'confirmed': case 'reschedule': return visitPage();
@@ -287,6 +287,7 @@ function showSearch(show) {
   $('search-box').inert = !show;
 }
 function render(restoreY=0) {
+  resetPull();
   applyTheme();
   $('phone').dataset.screen = page;
   $('page').value = page;
@@ -347,7 +348,7 @@ $('query').addEventListener('input',e=>{
   $('scroll').scrollTop=0;
 });
 $('scroll').addEventListener('scroll',()=>{
-  if(page!=='catalog') return;
+  if(page!=='catalog' || (wideWindow.matches && $('layout').value!=='phone')) return;
   const y=$('scroll').scrollTop, delta=y-previousY;
   previousY=y;
   travel=Math.sign(delta)===Math.sign(travel)?travel+delta:delta;
@@ -466,9 +467,63 @@ $('page').innerHTML=Object.entries(pages).map(([id,label])=>'<option value="'+id
 $('city').innerHTML=icon('pin')+'Ставрополь';
 $('lens').innerHTML=icon('search');
 $('layout').value=params.get('layout')==='phone'?'phone':'auto';
+const wideWindow=matchMedia($('adaptive-style').media);
+// Preview the compact header gesture against local prototype data.
+const scroller=$('scroll');
+let headerPull;
+function resetPull() {
+  if (!headerPull) return;
+  headerPull.heading.style.removeProperty('--pull-offset');
+  headerPull.title.style.removeProperty('transform');
+  headerPull.indicator.remove();
+  headerPull=null;
+}
+scroller.addEventListener('touchstart',event=>{
+  resetPull();
+  if (event.touches.length!==1 || scroller.scrollTop>0 || (wideWindow.matches && $('layout').value!=='phone')) return;
+  const heading=$('content').querySelector('.record-heading,.clinic-heading');
+  if (!heading) return;
+  const title=heading.querySelector('h1');
+  const indicator=document.createElement('div');
+  indicator.className='refresh-preview';
+  indicator.hidden=true;
+  indicator.textContent='Потяните для обновления';
+  heading.after(indicator);
+  const touch=event.touches[0];
+  headerPull={heading,title,indicator,startY:touch.clientY,startX:touch.clientX,ready:false};
+},{passive:true});
+scroller.addEventListener('touchmove',event=>{
+  if (!headerPull) return;
+  const {heading,title,indicator,startX,startY}=headerPull;
+  const touch=event.touches[0],distance=touch.clientY-startY;
+  if (event.touches.length!==1 || distance<=0 || Math.abs(touch.clientX-startX)>distance) {resetPull(); return;}
+  if (event.cancelable) event.preventDefault();
+  const progress=Math.min(distance/80,1);
+  const offset=(heading.querySelector('.icon-back').offsetWidth+parseFloat(getComputedStyle(heading).gap))*progress;
+  const drop=(title.offsetHeight+10)*progress;
+  title.style.transform='translate('+(-offset)+'px,'+drop+'px)';
+  heading.style.setProperty('--pull-offset',drop+'px');
+  indicator.hidden=distance<=80;
+  headerPull.ready=distance>=130;
+  indicator.textContent=headerPull.ready?'Отпустите для обновления':'Потяните для обновления';
+},{passive:false});
+scroller.addEventListener('touchend',()=>{
+  const refresh=headerPull?.ready;
+  resetPull();
+  if (refresh) render();
+});
+scroller.addEventListener('touchcancel',resetPull);
+function syncLayout(){
+  resetPull();
+  $('adaptive-style').media=$('layout').value==='phone'?'not all':wideWindow.media;
+  previousY=$('scroll').scrollTop;
+  travel=0;
+  showSearch(true);
+}
+syncLayout();
+wideWindow.addEventListener('change',syncLayout);
 $('layout').onchange=e=>{
-  const mobile=e.target.value==='phone';
-  $('adaptive-style').media=mobile?'not all':'(min-width: 680px)';
+  syncLayout();
   const url=new URL(location.href);
   url.searchParams.set('layout',e.target.value);
   history.replaceState(null,'',url);

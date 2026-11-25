@@ -43,11 +43,14 @@ nav {width:min(100%,480px);margin:auto}
 [data-screen=detail] #content,[data-screen=personal] #content,[data-screen=history] #content,[data-screen=studies] #content,[data-screen=labs] #content,[data-screen=code] #content,[data-screen=confirmed] #content,[data-screen=reschedule] #content {width:100%;position:relative}
 .clinic-heading,.record-heading {margin-bottom:24px;gap:14px}
 .clinic-heading h1,.record-heading h1 {font-size:clamp(26px,3vw,42px)}
-.clinic-body {display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:start}
+.clinic-body {display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:stretch}
 .clinic-body h2:first-child {margin-top:0}
-.clinic-info {border-inline-start:1px solid var(--line);padding-inline-start:clamp(18px,3vw,44px)}
+.clinic-info {display:grid;align-items:center;border-inline-start:1px solid var(--line);padding-inline-start:clamp(18px,3vw,44px)}
 .clinic-info .contact-actions {margin-top:24px}
-.gallery {min-width:0}
+.gallery {min-width:0;display:grid;align-items:center;container-type:inline-size}
+.gallery::before,.gallery>.photo-strip {grid-area:1/1}
+.gallery::before {content:"";height:100cqi}
+.clinic-info .notice:empty {display:none}
 .preferences {min-width:0}
 .preferences .theme-heading {margin-top:32px}
 .account-section .identity {border:0;gap:20px}
@@ -56,8 +59,8 @@ nav {width:min(100%,480px);margin:auto}
 [data-screen=booking] #content {grid-template-columns:repeat(2,minmax(0,1fr));column-gap:0;row-gap:24px}
 [data-screen=booking] #content>section:first-child {grid-area:1/1;padding-right:clamp(18px,3vw,42px)}
 .records {grid-area:1/2}
-.book {grid-area:2 / 1 / 3 / -1;justify-self:center;width:min(260px,100%);min-height:52px;margin:0}
-[data-screen=personal] #content,[data-screen=code] #content,[data-screen=confirmed] #content,[data-screen=reschedule] #content {padding-inline:max(calc((100% - 540px)/2),84px)}
+.book {grid-area:2 / 1 / 3 / -1;justify-self:center;width:min(585px,100%);min-height:78px;font-size:24px;margin:16px 0 0}
+[data-screen=code] #content,[data-screen=confirmed] #content,[data-screen=reschedule] #content {padding-inline:max(calc((100% - 540px)/2),84px)}
 :is([data-screen=personal],[data-screen=code],[data-screen=confirmed],[data-screen=reschedule]) #content>.icon-back {position:absolute;top:clamp(24px,3vw,48px);left:clamp(18px,3vw,48px)}
 :is([data-screen=history],[data-screen=studies],[data-screen=labs]) #content {min-height:100%;display:grid;grid-template-rows:auto 1fr}
 .record-heading {margin:0}

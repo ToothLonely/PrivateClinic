@@ -119,3 +119,10 @@ dialog h2 {margin:0 0 18px;font-size:21px;line-height:1.3}
 .photo-strip span:nth-child(2) {background:var(--card)}
 .photo-strip span:nth-child(3) {background:var(--filter)}
 @media(max-width:670px){aside {flex-wrap:wrap} aside select{max-width:120px}}
+
+[data-screen=login] #content {container-type:inline-size}
+.login-gap {height:2lh}
+@container (min-width: 495px) { .login-gap {height:1lh} }
+
+.clinic-heading,.record-heading {padding-bottom:var(--pull-offset,0px)}
+.refresh-preview {color:var(--muted);text-align:center;font-size:14px;padding:8px}
