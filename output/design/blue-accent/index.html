@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Частный приём · Синий акцент</title>
+<link rel="stylesheet" href="palette.css">
+<link rel="stylesheet" href="style.css">
+<link id="adaptive-style" rel="stylesheet" href="wide.css" media="(min-width: 680px)">
+<script>
+  if (new URLSearchParams(location.search).get('layout') === 'phone') {
+    document.getElementById('adaptive-style').media = 'not all';
+  }
+</script>
+<main>
+  <aside aria-label="Просмотр макета">
+    <strong>Синий акцент</strong>
+    <label>Экран <select id="page"></select></label>
+    <label>Тема <select id="theme"><option value="system">Системная</option><option value="light">Светлая</option><option value="dark">Тёмная</option></select></label>
+    <a href="overview.html">Все экраны</a>
+  </aside>
+  <article id="phone" aria-label="Частный приём">
+    <header>
+      <div class="status" aria-hidden="true"><b>9:41</b><span>▴ ▰</span></div>
+      <div class="brand"><b aria-label="Частный приём">ЧП</b><span id="city"></span></div>
+      <div id="search-box"><div><label class="search"><span id="lens"></span><input id="query" type="search" aria-label="Название или адрес" placeholder="Название или адрес"></label></div></div>
+    </header>
+    <div id="scroll"><div id="content"></div></div>
+    <div id="visit-actions" class="bottom-actions" hidden>
+      <button class="primary booking-color" data-go="reschedule">Перенести</button>
+      <button class="secondary logout" data-open-cancel>Отменить</button>
+    </div>
+    <div id="save-bar" class="bottom-actions" hidden><button class="primary booking-color" data-reschedule>Сохранить</button></div>
+    <dialog id="cancel-dialog" aria-labelledby="cancel-question">
+      <h2 id="cancel-question">Вы уверены, что хотите отменить запись?</h2>
+      <div class="dialog-actions">
+        <button class="primary booking-color" data-keep autofocus>Нет, оставить</button>
+        <button class="secondary logout" data-cancel>Да, отменить</button>
+      </div>
+    </dialog>
+    <footer><nav aria-label="Разделы приложения"></nav></footer>
+  </article>
+</main>
+<script src="app.js"></script>
+</html>

@@ -1,0 +1,41 @@
+/* The same screens reflow with the available window width. */
+main {display:flex;flex-direction:column;align-items:stretch;gap:10px;max-width:1480px;padding:10px 24px;margin:auto}
+aside {display:flex;align-items:center;justify-content:flex-end;gap:18px;padding:0;font-size:13px}
+aside strong {margin-right:auto;font-size:15px} aside label {display:flex;align-items:center} aside select {width:auto;padding:5px 8px}
+#phone {width:100%;height:calc(100dvh - 64px);min-height:330px;border-radius:24px}
+header {padding:22px clamp(20px,4vw,64px);border-radius:0;display:flex;align-items:center;justify-content:space-between;gap:24px}
+header[hidden] {display:none}
+.status {display:none}
+.brand {gap:22px;margin:0}
+.brand>b {font-size:31px}
+.brand::after {content:'Частный приём';font-weight:650;letter-spacing:-.04em;font-size:22px;order:1}
+.brand #city {order:2;border-inline-start:1px solid currentColor;padding-inline-start:18px}
+#search-box {width:min(39%,460px)}
+.search {margin:0}
+#content {width:min(100%,600px);margin:auto;padding:clamp(24px,3vw,48px)}
+[data-screen=catalog] #content,[data-screen=profile] #content,[data-screen=booking] #content,[data-screen=saved] #content {width:min(100%,1280px)}
+[data-screen=catalog] #content {display:grid;grid-template-columns:minmax(165px, .65fr) minmax(0,2fr);gap:clamp(18px,3vw,52px);align-items:start}
+.catalog-tools {position:sticky;top:0}
+.filters {display:grid;grid-template-columns:1fr}
+.filter {position:relative}
+.filter[open] {z-index:2}
+#results {display:grid;gap:12px;align-content:start}
+#results .row {margin:0;min-height:104px;padding:16px}
+[data-screen=booking] #content,[data-screen=profile] #content {display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(24px,5vw,84px);align-items:start}
+[data-screen=booking] #content section+section,.preferences {border-inline-start:1px solid var(--line);padding-inline-start:clamp(18px,3vw,42px)}
+.preferences .theme-heading {margin:10px 0 16px}
+.identity {padding-top:4px}
+#avatar {width:64px;height:64px}
+.bottom-actions {width:min(100%,600px);margin-inline:auto;padding-inline:clamp(24px,3vw,48px)}
+footer {padding:10px 24px 16px}
+nav {width:min(100%,480px);margin:auto}
+@media (min-width:1000px) {
+  #results {grid-template-columns:repeat(2,minmax(0,1fr))}
+  [data-screen=saved] .row {max-width:720px}
+}
+@media (max-width:799px) {
+  main {padding:8px}
+  aside {gap:8px}
+  .brand::after {display:none}
+  #search-box {width:48%}
+}

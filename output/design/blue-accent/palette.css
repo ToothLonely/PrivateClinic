@@ -1,0 +1,47 @@
+/* Shared pigments of the original Blue Accent concept. */
+:root {
+  --sky: #86d2fa;
+  --navy: #10274c;
+}
+#phone {
+  color-scheme: light;
+  --danger: #b73142;
+  --paper: #fcf8f1;
+  --card: #e8f4fc;
+  --filter: #dff0fc;
+  --disc: #c4e7fc;
+  --ink: #0d203c;
+  --muted: #49586a;
+  --header: #66c7fb;
+  --header-ink: #091c34;
+  --surface: #fffdf9;
+  --bar: var(--header);
+  --selected: var(--navy);
+  --bar-ink: var(--navy);
+  --selected-ink: white;
+  --action: #113967;
+  --action-ink: white;
+  --line: #cddce6;
+  --search-bg: #fffefe;
+  --search-ink: #34445b;
+}
+#phone[data-theme="dark"] {
+  color-scheme: dark;
+  --danger: #ff8994;
+  --paper: #191e25;
+  --card: #303a46;
+  --filter: #3b4654;
+  --disc: #496784;
+  --ink: #f6f8fa;
+  --muted: #c6d2df;
+  --header: #124489;
+  --header-ink: white;
+  --surface: #232c36;
+  --bar: var(--header);
+  --selected: var(--sky);
+  --bar-ink: white;
+  --selected-ink: var(--navy);
+  --action: var(--sky);
+  --action-ink: var(--navy);
+  --line: #455363;
+}
