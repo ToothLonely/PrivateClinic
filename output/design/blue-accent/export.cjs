@@ -20,7 +20,7 @@ async function exportScreens() {
     previews.push({key:'booking-upcoming',label:'Текущие записи · один приём',route:'screen=booking&example=upcoming'});
     previews.push({key:'booking-empty',label:'Текущие записи · пустой список',route:'screen=booking&example=empty'});
     previews.push({key:'cancel',label:'Подтверждение отмены',route:'screen=cancel'});
-    previews.push({key:'unavailable',label:'Диалог · запись сейчас недоступна',route:'screen=unavailable'});
+    previews.push({key:'unavailable',label:'Диалог · функция сейчас недоступна',route:'screen=unavailable'});
     const mobileCount=previews.length;
     for(const preview of previews.slice()){
       if(['booking-upcoming','booking-empty','catalog-types'].includes(preview.key)) continue;
@@ -87,8 +87,8 @@ async function exportScreens() {
     assert.notEqual(await favorite.getAttribute('aria-pressed'),before);
     await page.selectOption('#page','booking');
     await page.getByRole('button',{name:'Записаться',exact:true}).click();
-    assert(await page.getByRole('dialog',{name:'Запись сейчас недоступна'}).isVisible());
-    await page.getByRole('button',{name:'Открыть каталог'}).click();
+    assert(await page.getByRole('dialog',{name:'Функция сейчас недоступна'}).isVisible());
+    await page.getByRole('button',{name:'Перейти в каталог'}).click();
     assert.equal(await page.locator('#page').inputValue(),'catalog');
     await page.locator('nav').getByRole('button',{name:'Профиль'}).click();
     await page.getByRole('button',{name:'Тёмная',exact:true}).click();

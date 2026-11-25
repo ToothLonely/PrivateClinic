@@ -123,7 +123,7 @@ function clinicDetails() {
   return `<div class="clinic-heading">${back(origin)}<h1>${name}</h1>
     <button class="favorite" data-save aria-label="В избранном" aria-pressed="${favorites.has(current)}">${icon('heart')}</button></div>
     <div class="clinic-body"><section class="gallery" aria-label="Фотографии клиники">
-      <h2>Фотографии</h2><div class="photo-grid" aria-hidden="true"><span></span><span></span><span></span></div></section>
+      <h2>Фотографии</h2><div class="photo-strip" tabindex="0" role="group" aria-label="Фотографии филиала, горизонтальная прокрутка">${[1,2,3].map(n => `<span role="img" aria-label="Место для фотографии ${n}"></span>`).join('')}</div></section>
     <section class="clinic-info"><h2>Профиль клиники</h2><p>${category}</p>
       <h2>Адрес филиала</h2><p>${icon('pin')} Ставрополь, ${address}</p>
       <div class="contact-actions"><button class="secondary" data-contact="call">Позвонить</button>
@@ -381,7 +381,6 @@ document.addEventListener('click',e=>{
     return;
   }
   if ('unavailable' in d) openDialog($('unavailable-dialog'));
-  else if ('dismiss' in d) btn.closest('dialog').close();
   else if (d.go) {btn.closest('dialog')?.close(); navigate(d.go);}
   else if ('visit' in d) { selectedId=Number(d.visit); navigate('confirmed'); }
   else if ('slide' in d) {
