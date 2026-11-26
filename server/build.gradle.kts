@@ -4,7 +4,7 @@ plugins {
 }
 
 application {
-    mainClass.set("ru.privatclinic.server.MainKt")
+    mainClass.set("ru.privateclinic.server.MainKt")
 }
 
 dependencies {

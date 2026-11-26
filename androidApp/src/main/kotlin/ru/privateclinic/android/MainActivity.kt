@@ -1,9 +1,9 @@
-package ru.privatclinic.android
+package ru.privateclinic.android
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import ru.privatclinic.ui.ClinicApp
+import ru.privateclinic.ui.ClinicApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

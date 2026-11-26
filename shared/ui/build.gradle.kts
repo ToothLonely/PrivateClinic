@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "ru.privatclinic.ui"
+        namespace = "ru.privateclinic.ui"
     }
 
     @OptIn(ExperimentalWasmDsl::class)

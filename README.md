@@ -30,7 +30,7 @@
 
 ```sh
 ./gradlew :androidApp:installDebug
-adb shell am start -n ru.privatclinic.app/ru.privatclinic.android.MainActivity
+adb shell am start -n ru.privateclinic.app/ru.privateclinic.android.MainActivity
 ```
 
 **Веб.** Готовые файлы находятся в `webApp/build/dist/wasmJs/productionExecutable`. Для локального запуска откройте адрес, который выведет webpack.

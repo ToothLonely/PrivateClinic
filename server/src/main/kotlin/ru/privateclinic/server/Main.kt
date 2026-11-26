@@ -1,4 +1,4 @@
-package ru.privatclinic.server
+package ru.privateclinic.server
 
 import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer

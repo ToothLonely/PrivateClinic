@@ -1,4 +1,4 @@
-package ru.privatclinic.ui
+package ru.privateclinic.ui
 
 import androidx.compose.ui.window.ComposeUIViewController
 import platform.UIKit.UIViewController

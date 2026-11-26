@@ -1,8 +1,8 @@
-package ru.privatclinic.web
+package ru.privateclinic.web
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
-import ru.privatclinic.ui.ClinicApp
+import ru.privateclinic.ui.ClinicApp
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {

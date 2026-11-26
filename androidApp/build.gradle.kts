@@ -4,9 +4,9 @@ plugins {
 }
 
 android {
-    namespace = "ru.privatclinic.android"
+    namespace = "ru.privateclinic.android"
     defaultConfig {
-        applicationId = "ru.privatclinic.app"
+        applicationId = "ru.privateclinic.app"
         versionCode = 1
         versionName = "0.1.0"
     }

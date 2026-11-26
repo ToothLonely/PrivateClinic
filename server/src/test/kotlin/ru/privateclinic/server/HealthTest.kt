@@ -1,4 +1,4 @@
-package ru.privatclinic.server
+package ru.privateclinic.server
 
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
