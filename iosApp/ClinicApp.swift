@@ -14,7 +14,8 @@ struct ClinicApp: App {
 
 private struct ClinicComposeView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController()
+        let apiBaseUrl = Bundle.main.object(forInfoDictionaryKey: "ClinicAPIBaseURL") as? String
+        return MainViewControllerKt.MainViewController(apiBaseUrl: apiBaseUrl)
     }
 
     func updateUIViewController(_ controller: UIViewController, context: Context) {}

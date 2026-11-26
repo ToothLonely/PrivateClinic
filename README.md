@@ -1,13 +1,15 @@
 # Частный приём
 
-Клиенты для Android, iOS и веба открывают общий экран Compose Multiplatform. Сервер Ktor отвечает `200 OK` на `GET /health`.
+Клиенты для Android, iOS и веба используют общий каркас Compose Multiplatform. На главных экранах доступны переходы между каталогом, записью и профилем. Сервер Ktor отвечает `200 OK` на `GET /health`.
 
 | Модуль | Назначение |
 | --- | --- |
 | `androidApp` | Android-приложение и стартовая Activity |
 | `iosApp` | Xcode-проект и SwiftUI-оболочка |
 | `webApp` | Точка входа Kotlin/Wasm и сборка веб-клиента |
-| `shared/ui` | Общий экран и Kotlin-фреймворк для iOS |
+| `shared/ui` | Общие экраны, навигация, состояние, тема и Kotlin-фреймворк для iOS |
+| `shared/network` | Общий клиент API на Ktor и kotlinx.serialization |
+| `shared/storage` | Локальная база Room/SQLite для Android и iOS |
 | `server` | Приложение Ktor на JVM |
 | `build-logic` | Gradle convention plugins для платформ и Compose |
 
@@ -56,3 +58,19 @@ xcodebuild -project iosApp/ClinicApp.xcodeproj -scheme ClinicApp \
   -configuration Debug -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath iosApp/build CODE_SIGNING_ALLOWED=NO build
 ```
+
+## Адрес API
+
+- **Android.** Передайте абсолютный URL через `-PclinicApiBaseUrl=https://api.example.org/` при сборке. Для локального сервера в Android Emulator можно использовать `-PclinicApiBaseUrl=http://10.0.2.2:8080/` в debug-сборке.
+- **iOS.** Задайте `CLINIC_API_BASE_URL` в настройках сборки Xcode или передайте `CLINIC_API_BASE_URL=https://api.example.org/` в `xcodebuild`.
+- **Веб.** Задайте `content` у метатега `clinic-api-base-url` в [index.html](webApp/src/wasmJsMain/resources/index.html) абсолютным или относительным URL. Пустое значение использует текущий origin. Для отдельного origin разрешите его в CORS на сервере.
+
+Префикс пути в адресе сохраняется. Сеть подключается при запросе из функции, которой нужен API. Открытие экранов каркаса и жест обновления на заглушках работают без сервера.
+
+## Быстрые проверки каркаса
+
+```sh
+./gradlew :shared:network:testAndroidHostTest :shared:ui:testAndroidHostTest :server:test
+```
+
+Тесты проверяют настройки URL, десериализацию ответа, ошибки HTTP и транспорта, навигацию и пороги жеста. Для ручной проверки откройте «Профиль» → «Личные данные» в компактном окне и потяните экран вниз от верхней границы. До 80 dp двигается заголовок, затем появляется индикатор. Порог обновления — 130 dp. При ширине от 680 dp заголовок остаётся рядом со стрелкой.

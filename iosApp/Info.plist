@@ -6,5 +6,7 @@
     <true/>
     <key>CFBundleDisplayName</key>
     <string>Частный приём</string>
+    <key>ClinicAPIBaseURL</key>
+    <string>$(CLINIC_API_BASE_URL)</string>
 </dict>
 </plist>

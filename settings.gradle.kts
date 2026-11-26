@@ -13,10 +13,16 @@ plugins {
 dependencyResolutionManagement {
     // Kotlin/Wasm adds temporary distribution repositories for its build tools.
     repositories {
-        google()
+        google {
+            content {
+                includeGroupByRegex("androidx\\..*")
+                includeGroupByRegex("com\\.android\\..*")
+                includeGroupByRegex("com\\.google\\..*")
+            }
+        }
         mavenCentral()
     }
 }
 
 rootProject.name = "private-clinic"
-include(":androidApp", ":shared:ui", ":webApp", ":server")
+include(":androidApp", ":shared:ui", ":shared:network", ":shared:storage", ":webApp", ":server")

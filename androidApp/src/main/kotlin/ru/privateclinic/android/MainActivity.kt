@@ -3,11 +3,13 @@ package ru.privateclinic.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import ru.privateclinic.ui.ClinicApp
+import androidx.activity.enableEdgeToEdge
+import ru.privateclinic.ui.AndroidClinicApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { ClinicApp() }
+        enableEdgeToEdge()
+        setContent { AndroidClinicApp(BuildConfig.CLINIC_API_BASE_URL.ifBlank { null }) }
     }
 }
