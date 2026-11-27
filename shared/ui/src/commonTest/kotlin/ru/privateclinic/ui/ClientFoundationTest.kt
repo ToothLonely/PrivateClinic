@@ -4,6 +4,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import ru.privateclinic.ui.components.header.HeaderPull
+import ru.privateclinic.ui.navigation.ClinicRoute
+import ru.privateclinic.ui.state.ClinicViewModel
 
 class ClientFoundationTest {
     @Test

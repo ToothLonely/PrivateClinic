@@ -1,4 +1,4 @@
-package ru.privateclinic.ui
+package ru.privateclinic.ui.app
 
 import org.koin.dsl.module
 import org.koin.dsl.onClose

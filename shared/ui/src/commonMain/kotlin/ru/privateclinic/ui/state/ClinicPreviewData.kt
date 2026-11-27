@@ -1,4 +1,4 @@
-package ru.privateclinic.ui
+package ru.privateclinic.ui.state
 
 internal data class PreviewBranch(val name: String, val profile: String, val address: String)
 

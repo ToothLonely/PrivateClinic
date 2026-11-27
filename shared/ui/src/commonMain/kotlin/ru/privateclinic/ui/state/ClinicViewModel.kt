@@ -1,21 +1,10 @@
-package ru.privateclinic.ui
+package ru.privateclinic.ui.state
 
 import androidx.lifecycle.ViewModel
-import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-
-internal enum class ClinicRoute(val title: String) : NavKey {
-    Catalog("Клиники"),
-    Appointments("Запись"),
-    Profile("Профиль"),
-    PersonalData("Личные данные"),
-    Favorites("Избранное"),
-    Visits("История приёмов"),
-    Studies("Исследования"),
-    LabResults("Анализы"),
-}
+import ru.privateclinic.ui.navigation.ClinicRoute
 
 internal data class ClinicUiState(
     val backStack: List<ClinicRoute> = listOf(ClinicRoute.Catalog),

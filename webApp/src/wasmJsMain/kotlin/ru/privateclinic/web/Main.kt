@@ -8,7 +8,7 @@ import org.jetbrains.compose.resources.Font
 import private_clinic.webapp.generated.resources.Res
 import private_clinic.webapp.generated.resources.noto_sans_bold
 import private_clinic.webapp.generated.resources.noto_sans_regular
-import ru.privateclinic.ui.ClinicApp
+import ru.privateclinic.ui.app.ClinicApp
 import kotlin.js.ExperimentalWasmJsInterop
 
 @OptIn(ExperimentalComposeUiApi::class)

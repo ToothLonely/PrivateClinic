@@ -25,4 +25,5 @@ dependencies {
     implementation(project(":shared:ui"))
     implementation(libs.android.activity.compose)
     implementation(libs.compose.runtime)
+    debugImplementation(libs.compose.ui.tooling)
 }
