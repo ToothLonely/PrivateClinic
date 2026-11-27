@@ -36,8 +36,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import kotlin.math.sign
 
 internal val ClinicTabs = listOf(ClinicRoute.Appointments, ClinicRoute.Catalog, ClinicRoute.Profile)
@@ -58,9 +60,11 @@ internal fun ClinicNavigation(wide: Boolean, selected: ClinicRoute, onSelect: (C
             ClinicTabs.forEachIndexed { index, route ->
                 val active = route == selected
                 val tint = if (active) colors.onSecondaryContainer else ink
-                Column(Modifier.weight(1f).clip(CircleShape)
+                val interaction = remember { MutableInteractionSource() }
+                Column(Modifier.weight(1f).clinicFocus(interaction, Dp.Infinity).clip(CircleShape)
                     .then(if (active) Modifier.background(colors.secondaryContainer) else Modifier)
-                    .selectable(active, role = Role.Tab, onClick = { onSelect(route) }).heightIn(min = 48.dp),
+                    .selectable(active, interactionSource = interaction, indication = null,
+                        role = Role.Tab, onClick = { onSelect(route) }).heightIn(min = 48.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)) {
                     Symbol(tabIcons[index], tint, 22.dp)
@@ -130,7 +134,7 @@ private fun SearchField(value: String, onSearch: (String) -> Unit) {
 }
 
 @Composable
-internal fun CatalogScreen(wide: Boolean, search: String, onSearch: (String) -> Unit) {
+internal fun CatalogScreen(wide: Boolean, search: String, branches: List<PreviewBranch>, onSearch: (String) -> Unit) {
     val scroll = rememberScrollState()
     val density = LocalDensity.current
     val focus = LocalFocusManager.current
@@ -160,29 +164,79 @@ internal fun CatalogScreen(wide: Boolean, search: String, onSearch: (String) -> 
             }
         }
         BoxWithConstraints(Modifier.fillMaxSize().verticalScroll(scroll), contentAlignment = Alignment.TopCenter) {
-            val inset = contentInset(wide, maxWidth)
-            val gap = (maxWidth * .03f).coerceIn(18.dp, 52.dp)
-            val bounds = Modifier.widthIn(max = 1280.dp).fillMaxWidth().padding(inset)
+            val width = maxWidth
+            val inset = contentInset(wide, width)
+            val gap = (width * .03f).coerceIn(18.dp, 52.dp)
+            val bounds = Modifier.widthIn(max = 1280.dp).fillMaxWidth().padding(
+                start = inset, end = inset, top = inset, bottom = if (wide) inset else 18.dp,
+            )
             if (wide) Row(bounds, horizontalArrangement = Arrangement.spacedBy(gap)) {
-                Column(Modifier.weight(.65f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                val filterWidth = ((width.coerceAtMost(1280.dp) - inset * 2 - gap) * (.65f / 2.65f))
+                    .coerceAtLeast(165.dp)
+                Column(Modifier.width(filterWidth).zIndex(1f).offset {
+                    IntOffset(0, (scroll.value - inset.roundToPx()).coerceAtLeast(0))
+                }, verticalArrangement = Arrangement.spacedBy(9.dp)) {
                     CatalogFilter("Все типы")
                     CatalogFilter("Весь город")
                 }
-                Box(Modifier.weight(2f)) { CatalogStatus() }
+                CatalogResults(branches, true, if (width >= 1000.dp) 2 else 1, Modifier.weight(1f))
             } else Column(bounds, verticalArrangement = Arrangement.spacedBy(15.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     CatalogFilter("Все типы", Modifier.weight(1.2f))
                     CatalogFilter("Весь город", Modifier.weight(1f))
                 }
-                CatalogStatus()
+                CatalogResults(branches, false, 1)
             }
         }
     }
 }
 
 @Composable
-private fun CatalogStatus() {
-    Text("Каталог пока недоступен", color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun CatalogResults(branches: List<PreviewBranch>, wide: Boolean, columns: Int, modifier: Modifier = Modifier) {
+    if (branches.isEmpty()) {
+        Text("Каталог пока недоступен", modifier, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        return
+    }
+    val gap = if (wide) 12.dp else 10.dp
+    Column(modifier.fillMaxWidth().padding(bottom = if (wide) 0.dp else gap),
+        verticalArrangement = Arrangement.spacedBy(gap)) {
+        branches.chunked(columns).forEach { group ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                group.forEach { ClinicRow(it, Modifier.weight(1f), wideCatalog = wide) }
+                if (group.size < columns) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ClinicRow(branch: PreviewBranch, modifier: Modifier = Modifier, wideCatalog: Boolean = false) {
+    val colors = MaterialTheme.colorScheme
+    val palette = LocalAccent.current
+    val icon = if (branch.profile == "Стоматология") ClinicIcon.Tooth else ClinicIcon.Clinic
+    Row(
+        modifier.fillMaxWidth().background(colors.surfaceVariant, RoundedCornerShape(19.dp))
+            .heightIn(min = if (wideCatalog) 104.dp else 92.dp)
+            .padding(horizontal = if (wideCatalog) 16.dp else 12.dp, vertical = if (wideCatalog) 16.dp else 13.dp),
+        horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(48.dp).background(palette.disc, CircleShape), contentAlignment = Alignment.Center) {
+            Symbol(icon, colors.onSurface, 27.dp)
+        }
+        Column(Modifier.weight(1f, fill = false)
+            .align(if (wideCatalog) Alignment.CenterVertically else Alignment.Top)) {
+            Text(branch.name, fontSize = 18.sp, lineHeight = 25.2.sp, letterSpacing = (-.5).sp,
+                fontWeight = FontWeight.Bold)
+            Text(branch.profile, color = colors.onSurfaceVariant, fontSize = 13.sp, lineHeight = 18.2.sp)
+            Row(Modifier.heightIn(min = 22.4.dp).padding(top = 1.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.Top) {
+                Box(Modifier.height(18.2.dp), contentAlignment = Alignment.Center) {
+                    Symbol(ClinicIcon.Pin, colors.onSurface, 14.dp)
+                }
+                Text(branch.address, fontSize = 13.sp, lineHeight = 18.2.sp)
+            }
+        }
+    }
 }
 
 // Until the catalogue is connected there are no results to filter.
@@ -208,7 +262,9 @@ internal fun SectionTitle(title: String) {
 
 @Composable
 internal fun RouteRow(route: ClinicRoute, onOpen: (ClinicRoute) -> Unit, trailing: String? = null) {
-    Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpen(route) }) {
+    val interaction = remember { MutableInteractionSource() }
+    Column(Modifier.fillMaxWidth().clinicFocus(interaction)
+        .clickable(interactionSource = interaction, indication = null, role = Role.Button) { onOpen(route) }) {
         Row(Modifier.fillMaxWidth().heightIn(min = 46.dp).padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(route.title, fontSize = 16.sp, fontWeight = FontWeight(620))

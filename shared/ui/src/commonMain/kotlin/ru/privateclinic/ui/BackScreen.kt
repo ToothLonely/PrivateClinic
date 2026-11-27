@@ -1,10 +1,8 @@
 package ru.privateclinic.ui
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ColumnScope
@@ -16,12 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -37,8 +33,10 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,16 +56,14 @@ internal fun BackScreen(
     wide: Boolean,
     onBack: () -> Unit,
     onRefresh: (() -> Unit)? = null,
+    maxContentWidth: Dp = Dp.Infinity,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scroll = rememberScrollState()
     val density = LocalDensity.current
     val refresh by rememberUpdatedState(onRefresh)
     var distance by remember(wide) { mutableFloatStateOf(0f) }
-    val visibleDistance = key(wide) {
-        animateFloatAsState(distance, animationSpec = if (distance > 0f) snap() else tween(160)).value
-    }
-    val pull = HeaderPull(visibleDistance, wide)
+    val pull = HeaderPull(distance, wide)
 
     val gesture = if (!wide || onRefresh != null) {
         Modifier.pointerInput(wide, density) {
@@ -95,9 +91,12 @@ internal fun BackScreen(
                         }
 
                         val movement = touch.position - down.position
+                        if (movement.y <= 0f || abs(movement.x) > movement.y) {
+                            if (pulling || maxOf(abs(movement.x), abs(movement.y)) > viewConfiguration.touchSlop) break
+                            continue
+                        }
                         if (!pulling) {
-                            if (abs(movement.x) > viewConfiguration.touchSlop && abs(movement.x) > movement.y) break
-                            if (movement.y < -viewConfiguration.touchSlop || scroll.canScrollBackward) break
+                            if (scroll.canScrollBackward) break
                             if (movement.y <= viewConfiguration.touchSlop) continue
                             pulling = true
                         }
@@ -113,19 +112,20 @@ internal fun BackScreen(
         Modifier
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize().then(gesture)) {
+    BoxWithConstraints(Modifier.fillMaxSize().then(gesture), contentAlignment = Alignment.TopCenter) {
         val inset = contentInset(wide, maxWidth)
         val minimumHeight = maxHeight
         val headingSize = if (wide) (maxWidth.value * .03f).coerceIn(26f, 42f) else 31f
         Column(
-            Modifier.fillMaxSize().verticalScroll(scroll).heightIn(min = minimumHeight).padding(inset),
+            Modifier.widthIn(max = maxContentWidth).fillMaxSize().verticalScroll(scroll).heightIn(min = minimumHeight)
+                .padding(start = inset, end = inset, top = inset, bottom = if (wide) inset else 18.dp),
         ) {
             BackHeading(title, pull.titleProgress, wide, headingSize, onBack)
             if (pull.showsRefresh) {
                 Text(
                     text = if (pull.canRefresh) "Отпустите для обновления" else "Потяните для обновления",
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp),
+                    fontSize = 14.sp, lineHeight = 19.6.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -136,27 +136,30 @@ internal fun BackScreen(
 
 @Composable
 private fun BackHeading(title: String, progress: Float, wide: Boolean, size: Float, onBack: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
     Layout(
         modifier = Modifier.fillMaxWidth(),
         content = {
-            IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = "Назад" }) {
+            Box(Modifier.widthIn(min = 46.dp, max = 46.dp).heightIn(min = 46.dp)
+                .clinicFocus(interaction).clickable(interactionSource = interaction, indication = null,
+                    role = Role.Button, onClick = onBack)
+                .semantics { contentDescription = "Назад" }, contentAlignment = Alignment.Center) {
                 Symbol(ClinicIcon.Back, MaterialTheme.colorScheme.onSurface, 24.dp)
             }
-            Text(title, Modifier.semantics { heading() }.padding(vertical = 16.dp),
+            Text(title, Modifier.semantics { heading() },
                 fontSize = size.sp, lineHeight = (size * 1.1f).sp, letterSpacing = (-1.1).sp, fontWeight = FontWeight.Bold)
         },
     ) { measurables, constraints ->
         val button = measurables[0].measure(Constraints(maxWidth = constraints.maxWidth))
         val gap = (if (wide) 14.dp else 8.dp).roundToPx()
-        val titleX = ((button.width + gap) * (1f - progress)).roundToInt()
-        val heading = measurables[1].measure(Constraints(maxWidth = (constraints.maxWidth - titleX).coerceAtLeast(0)))
-        val rowHeight = maxOf(button.height, heading.height)
-        val inlineY = (rowHeight - heading.height) / 2
-        val titleY = inlineY + ((rowHeight + gap - inlineY) * progress).roundToInt()
+        val titleStart = button.width + gap
+        val heading = measurables[1].measure(Constraints(maxWidth = (constraints.maxWidth - titleStart).coerceAtLeast(0)))
+        val rowHeight = maxOf(button.height, heading.height + 2 * 16.dp.roundToPx())
+        val drop = ((heading.height + 10.dp.roundToPx()) * progress).roundToInt()
 
-        layout(constraints.maxWidth, maxOf(rowHeight, titleY + heading.height)) {
+        layout(constraints.maxWidth, rowHeight + drop) {
             button.placeRelative(0, (rowHeight - button.height) / 2)
-            heading.placeRelative(titleX, titleY)
+            heading.placeRelative((titleStart * (1f - progress)).roundToInt(), (rowHeight - heading.height) / 2 + drop)
         }
     }
 }

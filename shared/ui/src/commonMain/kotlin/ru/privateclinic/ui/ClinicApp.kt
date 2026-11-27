@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
@@ -88,6 +92,7 @@ private fun ClinicContent(viewModel: ClinicViewModel, theme: ThemeChoice, onThem
             if (route in ClinicTabs) drawRect(headerColor, size = Size(size.width, systemInsets.getTop(this).toFloat()))
         }.safeDrawingPadding().imePadding()) {
             val wide = maxWidth >= WideWindow
+            val limitSavedCards = maxWidth >= 1000.dp
             Column(Modifier.fillMaxSize().then(if (bookingNotice) Modifier.clearAndSetSemantics {} else Modifier)) {
                 if (storageUnavailable) {
                     Text("Локальное хранилище недоступно", color = MaterialTheme.colorScheme.error)
@@ -97,23 +102,36 @@ private fun ClinicContent(viewModel: ClinicViewModel, theme: ThemeChoice, onThem
                     onBack = { if (bookingNotice) bookingNotice = false else viewModel.back() },
                     modifier = Modifier.weight(1f),
                     entryProvider = entryProvider {
-                        entry(ClinicRoute.Catalog) { CatalogScreen(wide, state.search, viewModel::search) }
+                        entry(ClinicRoute.Catalog) { CatalogScreen(wide, state.search, state.branches, viewModel::search) }
                         entry(ClinicRoute.Appointments) { AppointmentsScreen(wide, viewModel::open) { bookingNotice = true } }
-                        entry(ClinicRoute.Profile) { ProfileScreen(wide, theme, onTheme, viewModel::open) }
+                        entry(ClinicRoute.Profile) {
+                            ProfileScreen(wide, state.profile, state.favorites.size, theme, onTheme, viewModel::open)
+                        }
                         ClinicRoute.entries.filterNot { it in ClinicTabs }.forEach { destination ->
                             entry(destination) {
-                                BackScreen(destination.title, wide, viewModel::back) {
+                                val saved = destination == ClinicRoute.Favorites
+                                BackScreen(destination.title, wide, viewModel::back,
+                                    maxContentWidth = if (saved) 1280.dp else Dp.Infinity) {
                                     when (destination) {
                                         ClinicRoute.Favorites -> {
-                                            Text("Сохраняйте клиники из их карточек.")
-                                            CatalogLink { viewModel.selectTab(ClinicRoute.Catalog) }
+                                            if (state.favorites.isEmpty()) {
+                                                Text("Сохраняйте клиники из их карточек.",
+                                                    Modifier.padding(top = 10.dp, bottom = 16.dp))
+                                                CatalogLink { viewModel.selectTab(ClinicRoute.Catalog) }
+                                            } else {
+                                                val cardWidth = if (limitSavedCards) 720.dp else Dp.Infinity
+                                                state.favorites.forEach {
+                                                    ClinicRow(it, Modifier.widthIn(max = cardWidth).padding(bottom = 10.dp))
+                                                }
+                                            }
                                         }
-                                        ClinicRoute.PersonalData -> PersonalDataLabels()
+                                        ClinicRoute.PersonalData -> PersonalData(state.profile)
                                         else -> {
                                             val center = if (wide) Modifier.fillMaxWidth().weight(1f) else Modifier
-                                            Box(center, contentAlignment = Alignment.Center) {
+                                            Box(center.padding(top = 10.dp, bottom = 16.dp), contentAlignment = Alignment.Center) {
                                                 Text("Функция появится позже.", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    fontSize = if (wide) 20.sp else 16.sp)
+                                                    fontSize = if (wide) 20.sp else 16.sp,
+                                                    lineHeight = if (wide) 28.sp else 22.4.sp)
                                             }
                                         }
                                     }

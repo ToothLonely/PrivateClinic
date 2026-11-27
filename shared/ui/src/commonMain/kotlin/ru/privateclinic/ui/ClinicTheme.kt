@@ -1,6 +1,8 @@
 package ru.privateclinic.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LocalTextStyle
@@ -13,8 +15,18 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 private val Navy = Color(0xFF10274C)
@@ -79,6 +91,24 @@ internal data class AccentColors(
 private val LightAccent = AccentColors(Color(0xFFDFF0FC), Color(0xFFC4E7FC), Navy)
 private val DarkAccent = AccentColors(Color(0xFF3B4654), Color(0xFF496784), Color.White)
 internal val LocalAccent = staticCompositionLocalOf { LightAccent }
+
+@Composable
+internal fun Modifier.clinicFocus(source: InteractionSource, radius: Dp = 0.dp): Modifier {
+    val focused by source.collectIsFocusedAsState()
+    if (!focused || LocalInputModeManager.current.inputMode != InputMode.Keyboard) return this
+    return drawBehind {
+        val stroke = 3.dp.toPx()
+        val outset = 2.dp.toPx() + stroke / 2f
+        val corner = if (radius > 0.dp) minOf(radius.toPx(), size.minDimension / 2) + outset else 0f
+        drawRoundRect(
+            color = Color(0xFF497FCC),
+            topLeft = Offset(-outset, -outset),
+            size = Size(size.width + 2 * outset, size.height + 2 * outset),
+            cornerRadius = CornerRadius(corner),
+            style = Stroke(stroke),
+        )
+    }
+}
 
 @Composable
 internal fun ClinicTheme(choice: ThemeChoice, fontFamily: FontFamily, content: @Composable () -> Unit) {

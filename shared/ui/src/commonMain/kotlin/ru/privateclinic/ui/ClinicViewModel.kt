@@ -20,6 +20,9 @@ internal enum class ClinicRoute(val title: String) : NavKey {
 internal data class ClinicUiState(
     val backStack: List<ClinicRoute> = listOf(ClinicRoute.Catalog),
     val search: String = "",
+    val branches: List<PreviewBranch> = ClinicPreviewData.branches,
+    val profile: PreviewProfile = ClinicPreviewData.profile,
+    val favorites: List<PreviewBranch> = ClinicPreviewData.favorites,
 )
 
 internal class ClinicViewModel : ViewModel() {
