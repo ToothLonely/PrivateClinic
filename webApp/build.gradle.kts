@@ -17,6 +17,9 @@ kotlin {
     }
 
     sourceSets {
+        commonMain.dependencies {
+            implementation(libs.compose.resources)
+        }
         wasmJsMain.dependencies {
             implementation(project(":shared:ui"))
             implementation(libs.compose.runtime)

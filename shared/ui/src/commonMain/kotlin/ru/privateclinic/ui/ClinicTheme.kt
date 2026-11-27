@@ -3,10 +3,17 @@ package ru.privateclinic.ui
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
@@ -56,11 +63,37 @@ private val ClinicShapes = Shapes(
 
 internal val WideWindow = 680.dp
 
+internal enum class ThemeChoice(val label: String) {
+    System("Системная"), Light("Светлая"), Dark("Тёмная")
+}
+
+internal data class AccentColors(
+    val filter: Color,
+    val disc: Color,
+    val barInk: Color,
+) {
+    val search = Color(0xFFFFFEFE)
+    val searchInk = Color(0xFF34445B)
+}
+
+private val LightAccent = AccentColors(Color(0xFFDFF0FC), Color(0xFFC4E7FC), Navy)
+private val DarkAccent = AccentColors(Color(0xFF3B4654), Color(0xFF496784), Color.White)
+internal val LocalAccent = staticCompositionLocalOf { LightAccent }
+
 @Composable
-internal fun ClinicTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
-        shapes = ClinicShapes,
-        content = content,
-    )
+internal fun ClinicTheme(choice: ThemeChoice, fontFamily: FontFamily, content: @Composable () -> Unit) {
+    val dark = when (choice) {
+        ThemeChoice.System -> isSystemInDarkTheme()
+        ThemeChoice.Light -> false
+        ThemeChoice.Dark -> true
+    }
+    CompositionLocalProvider(LocalAccent provides if (dark) DarkAccent else LightAccent) {
+        MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, shapes = ClinicShapes) {
+            val textStyle = TextStyle(fontFamily = fontFamily, fontSize = 16.sp, lineHeight = 22.4.sp, letterSpacing = 0.sp,
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None))
+            CompositionLocalProvider(LocalTextStyle provides textStyle) {
+                content()
+            }
+        }
+    }
 }

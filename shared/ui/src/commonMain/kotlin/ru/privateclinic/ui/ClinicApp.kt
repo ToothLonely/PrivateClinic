@@ -1,5 +1,15 @@
 package ru.privateclinic.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,10 +42,11 @@ import org.koin.dsl.onClose
 import ru.privateclinic.network.ClinicApi
 
 @Composable
-fun ClinicApp(apiBaseUrl: String?) = ClinicApp(apiBaseUrl, platformModule = null)
+fun ClinicApp(apiBaseUrl: String?, fontFamily: FontFamily = FontFamily.SansSerif) =
+    ClinicApp(apiBaseUrl, platformModule = null, fontFamily = fontFamily)
 
 @Composable
-internal fun ClinicApp(apiBaseUrl: String?, platformModule: Module?) {
+internal fun ClinicApp(apiBaseUrl: String?, platformModule: Module?, fontFamily: FontFamily = FontFamily.SansSerif) {
     val configuration = remember(apiBaseUrl, platformModule) {
         koinConfiguration {
             modules(module {
@@ -45,14 +57,15 @@ internal fun ClinicApp(apiBaseUrl: String?, platformModule: Module?) {
         }
     }
     KoinApplication(configuration, logLevel = Level.ERROR) {
-        ClinicTheme { ClinicContent(koinViewModel()) }
+        var theme by rememberSaveable { mutableStateOf(ThemeChoice.System) }
+        ClinicTheme(theme, fontFamily) { ClinicContent(koinViewModel(), theme) { theme = it } }
     }
 }
 
 internal class LocalStorage(val open: suspend () -> Unit)
 
 @Composable
-private fun ClinicContent(viewModel: ClinicViewModel) {
+private fun ClinicContent(viewModel: ClinicViewModel, theme: ThemeChoice, onTheme: (ThemeChoice) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val koin = getKoin()
     var storageUnavailable by remember(koin) { mutableStateOf(false) }
@@ -67,29 +80,57 @@ private fun ClinicContent(viewModel: ClinicViewModel) {
     }
 
     val route = state.backStack.last()
+    var bookingNotice by remember(route) { mutableStateOf(false) }
     Surface(color = MaterialTheme.colorScheme.background) {
-        BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
+        val systemInsets = WindowInsets.safeDrawing
+        val headerColor = MaterialTheme.colorScheme.primaryContainer
+        BoxWithConstraints(Modifier.fillMaxSize().drawBehind {
+            if (route in ClinicTabs) drawRect(headerColor, size = Size(size.width, systemInsets.getTop(this).toFloat()))
+        }.safeDrawingPadding().imePadding()) {
             val wide = maxWidth >= WideWindow
-            Column(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().then(if (bookingNotice) Modifier.clearAndSetSemantics {} else Modifier)) {
                 if (storageUnavailable) {
                     Text("Локальное хранилище недоступно", color = MaterialTheme.colorScheme.error)
                 }
                 NavDisplay(
                     backStack = state.backStack,
-                    onBack = viewModel::back,
+                    onBack = { if (bookingNotice) bookingNotice = false else viewModel.back() },
                     modifier = Modifier.weight(1f),
                     entryProvider = entryProvider {
                         entry(ClinicRoute.Catalog) { CatalogScreen(wide, state.search, viewModel::search) }
-                        entry(ClinicRoute.Appointments) { AppointmentsScreen(wide, viewModel::open) }
-                        entry(ClinicRoute.Profile) { ProfileScreen(wide, viewModel::open) }
+                        entry(ClinicRoute.Appointments) { AppointmentsScreen(wide, viewModel::open) { bookingNotice = true } }
+                        entry(ClinicRoute.Profile) { ProfileScreen(wide, theme, onTheme, viewModel::open) }
                         ClinicRoute.entries.filterNot { it in ClinicTabs }.forEach { destination ->
-                            entry(destination) { BackScreen(it.title, wide, viewModel::back) }
+                            entry(destination) {
+                                BackScreen(destination.title, wide, viewModel::back) {
+                                    when (destination) {
+                                        ClinicRoute.Favorites -> {
+                                            Text("Сохраняйте клиники из их карточек.")
+                                            CatalogLink { viewModel.selectTab(ClinicRoute.Catalog) }
+                                        }
+                                        ClinicRoute.PersonalData -> PersonalDataLabels()
+                                        else -> {
+                                            val center = if (wide) Modifier.fillMaxWidth().weight(1f) else Modifier
+                                            Box(center, contentAlignment = Alignment.Center) {
+                                                Text("Функция появится позже.", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    fontSize = if (wide) 20.sp else 16.sp)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     },
                 )
                 if (route in ClinicTabs) {
-                    ClinicNavigation(route, viewModel::selectTab)
+                    ClinicNavigation(wide, route, viewModel::selectTab)
                 }
+            }
+            if (bookingNotice) {
+                BookingNotice(onDismiss = { bookingNotice = false }, onCatalog = {
+                    bookingNotice = false
+                    viewModel.selectTab(ClinicRoute.Catalog)
+                })
             }
         }
     }

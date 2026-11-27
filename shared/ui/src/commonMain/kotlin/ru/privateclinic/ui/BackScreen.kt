@@ -6,6 +6,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,9 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,9 +35,12 @@ import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -55,9 +58,7 @@ internal fun BackScreen(
     wide: Boolean,
     onBack: () -> Unit,
     onRefresh: (() -> Unit)? = null,
-    content: @Composable () -> Unit = {
-        Text("Раздел пока недоступен", color = MaterialTheme.colorScheme.onSurfaceVariant)
-    },
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val scroll = rememberScrollState()
     val density = LocalDensity.current
@@ -112,15 +113,14 @@ internal fun BackScreen(
         Modifier
     }
 
-    Box(
-        Modifier.fillMaxSize().then(gesture).verticalScroll(scroll),
-        contentAlignment = Alignment.TopCenter,
-    ) {
+    BoxWithConstraints(Modifier.fillMaxSize().then(gesture)) {
+        val inset = contentInset(wide, maxWidth)
+        val minimumHeight = maxHeight
+        val headingSize = if (wide) (maxWidth.value * .03f).coerceIn(26f, 42f) else 31f
         Column(
-            Modifier.widthIn(max = 1280.dp).fillMaxWidth().padding(if (wide) 32.dp else 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier.fillMaxSize().verticalScroll(scroll).heightIn(min = minimumHeight).padding(inset),
         ) {
-            BackHeading(title, pull.titleProgress, onBack)
+            BackHeading(title, pull.titleProgress, wide, headingSize, onBack)
             if (pull.showsRefresh) {
                 Text(
                     text = if (pull.canRefresh) "Отпустите для обновления" else "Потяните для обновления",
@@ -135,18 +135,19 @@ internal fun BackScreen(
 }
 
 @Composable
-private fun BackHeading(title: String, progress: Float, onBack: () -> Unit) {
+private fun BackHeading(title: String, progress: Float, wide: Boolean, size: Float, onBack: () -> Unit) {
     Layout(
         modifier = Modifier.fillMaxWidth(),
         content = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+            IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = "Назад" }) {
+                Symbol(ClinicIcon.Back, MaterialTheme.colorScheme.onSurface, 24.dp)
             }
-            Text(title, Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineLarge)
+            Text(title, Modifier.semantics { heading() }.padding(vertical = 16.dp),
+                fontSize = size.sp, lineHeight = (size * 1.1f).sp, letterSpacing = (-1.1).sp, fontWeight = FontWeight.Bold)
         },
     ) { measurables, constraints ->
         val button = measurables[0].measure(Constraints(maxWidth = constraints.maxWidth))
-        val gap = 8.dp.roundToPx()
+        val gap = (if (wide) 14.dp else 8.dp).roundToPx()
         val titleX = ((button.width + gap) * (1f - progress)).roundToInt()
         val heading = measurables[1].measure(Constraints(maxWidth = (constraints.maxWidth - titleX).coerceAtLeast(0)))
         val rowHeight = maxOf(button.height, heading.height)
