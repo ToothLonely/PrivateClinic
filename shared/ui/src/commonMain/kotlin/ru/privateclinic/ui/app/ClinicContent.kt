@@ -30,10 +30,12 @@ import ru.privateclinic.ui.components.layout.WideWindow
 import ru.privateclinic.ui.navigation.ClinicNavigation
 import ru.privateclinic.ui.navigation.ClinicRoute
 import ru.privateclinic.ui.navigation.ClinicTabs
+import ru.privateclinic.ui.platform.isWeb
 import ru.privateclinic.ui.screens.appointments.AppointmentsScreen
 import ru.privateclinic.ui.screens.appointments.BookingNotice
 import ru.privateclinic.ui.screens.appointments.MedicalRecordScreen
 import ru.privateclinic.ui.screens.catalog.CatalogScreen
+import ru.privateclinic.ui.screens.catalog.CatalogScrollState
 import ru.privateclinic.ui.screens.profile.FavoritesScreen
 import ru.privateclinic.ui.screens.profile.PersonalDataScreen
 import ru.privateclinic.ui.screens.profile.ProfileScreen
@@ -53,6 +55,7 @@ internal fun ClinicContent(
     var bookingNotice by remember(route) { mutableStateOf(false) }
     var restoreBookingFocus by remember(route) { mutableStateOf(false) }
     val bookingFocus = remember { FocusRequester() }
+    val compactMobileCatalog = if (isWeb) null else remember { CatalogScrollState() }
     val dismissBookingNotice = {
         restoreBookingFocus = true
         bookingNotice = false
@@ -80,7 +83,11 @@ internal fun ClinicContent(
                     onBack = { if (bookingNotice) dismissBookingNotice() else viewModel.back() },
                     modifier = Modifier.weight(1f),
                     entryProvider = entryProvider {
-                        entry(ClinicRoute.Catalog) { CatalogScreen(wide, state.search, state.branches, viewModel::search) }
+                        entry(ClinicRoute.Catalog) {
+                            CatalogScreen(wide, state.search, state.branches,
+                                compactScrollState = compactMobileCatalog.takeUnless { wide },
+                                onSearch = viewModel::search)
+                        }
                         entry(ClinicRoute.Appointments) {
                             AppointmentsScreen(wide, viewModel::open, bookingFocus) { bookingNotice = true }
                         }

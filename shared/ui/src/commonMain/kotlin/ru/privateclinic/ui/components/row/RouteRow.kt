@@ -33,7 +33,8 @@ internal fun RouteRow(route: ClinicRoute, onOpen: (ClinicRoute) -> Unit, trailin
         Row(Modifier.fillMaxWidth().heightIn(min = 46.dp).padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(route.title, fontSize = 16.sp, fontWeight = FontWeight(620))
-            if (trailing != null) Text(trailing, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (trailing != null) Text(trailing, fontSize = (16f * 5 / 6).sp, fontWeight = FontWeight(620),
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }

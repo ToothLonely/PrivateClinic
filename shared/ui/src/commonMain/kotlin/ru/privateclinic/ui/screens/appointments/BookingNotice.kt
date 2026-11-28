@@ -40,6 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ru.privateclinic.ui.platform.isWeb
 import ru.privateclinic.ui.theme.ClinicTheme
 import ru.privateclinic.ui.theme.ThemeChoice
 
@@ -61,8 +62,10 @@ internal fun BookingNotice(onDismiss: () -> Unit, onCatalog: () -> Unit) {
             detectTapGestures { onDismiss() }
         })
         val shape = RoundedCornerShape(22.dp)
+        // CSS blur 45 uses sigma 22.5. Compose on Wasm converts its radius to sigma.
+        val shadowRadius = if (isWeb) ((45f / 2 - .5f) / .57735f).dp else 22.5.dp
         Surface(Modifier.padding(horizontal = 16.dp).widthIn(max = 340.dp).fillMaxWidth()
-            .dropShadow(shape, Shadow(radius = 22.5.dp, color = Color(0x44000000), offset = DpOffset(0.dp, 14.dp))),
+            .dropShadow(shape, Shadow(radius = shadowRadius, color = Color(0x44000000), offset = DpOffset(0.dp, 14.dp))),
             shape = shape, color = colors.surface,
             border = BorderStroke(1.dp, colors.outlineVariant)) {
             Column(Modifier.padding(22.dp)) {

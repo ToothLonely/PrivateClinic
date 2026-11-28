@@ -4,6 +4,7 @@ const { writeFile, mkdir } = require('node:fs/promises');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const assert = require('node:assert/strict');
+const { useApplicationViewport } = require('./measure.cjs');
 
 async function exportScreens() {
   const browser = await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH});
@@ -26,11 +27,18 @@ async function exportScreens() {
       if(['booking-upcoming','booking-empty','catalog-types'].includes(preview.key)) continue;
       previews.push({...preview,key:'wide-'+preview.key,route:preview.key==='booking'?'screen=booking':preview.route,wide:true});
     }
+    const wideEnd=previews.length;
+    for(const preview of previews.slice(0,mobileCount)){
+      if(['catalog','profile','booking-empty','unavailable'].includes(preview.key)) {
+        previews.push({...preview,key:'compact-web-'+preview.key});
+      }
+    }
     const rows=[];
     await mkdir(path.join(__dirname,'screens'),{recursive:true});
-    for(const {key,label,route,wide=false} of previews){
+    for(const [index,{key,label,route,wide=false}] of previews.entries()){
       await page.setViewportSize({width:wide?1280:920,height:880});
-      const query=route+(wide?'':'&layout=phone');
+      const platform=index<mobileCount?'mobile':'web';
+      const query=route+'&platform='+platform+(wide?'':'&layout=phone');
       const pictures=[];
       for(const [theme,caption] of [['light','Светлая'],['dark','Тёмная']]){
         await page.goto(url+'?'+query+'&theme='+theme);
@@ -43,7 +51,52 @@ async function exportScreens() {
       }
       rows.push('<section><h2>'+label+'</h2><div>'+pictures.join('')+'</div></section>');
     }
-    await writeFile(path.join(__dirname,'overview.html'),'<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Синий акцент · Экраны</title><style>*{box-sizing:border-box}body{margin:0;background:#eeece7;color:#182336;font:16px system-ui}main{max-width:780px;margin:auto;padding:24px 14px}h1{font-size:30px}section{margin:32px 0 48px}section div{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}img{display:block;width:100%;border-radius:18px}figcaption{margin-top:6px;font-size:14px}a{color:#254d75}</style><main><a href="index.html">Открыть прототип</a><h1>Синий акцент</h1><a href="#mobile">Телефон</a> · <a href="#wide">Широкий экран</a><h2 id="mobile">Телефон</h2>'+rows.slice(0,mobileCount).join('')+'<h2 id="wide">Широкий экран</h2>'+rows.slice(mobileCount).join('')+'</main></html>');
+    await writeFile(path.join(__dirname,'overview.html'),'<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Синий акцент · Экраны</title><style>*{box-sizing:border-box}body{margin:0;background:#eeece7;color:#182336;font:16px system-ui}main{max-width:780px;margin:auto;padding:24px 14px}h1{font-size:30px}section{margin:32px 0 48px}section div{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}img{display:block;width:100%;border-radius:18px}figcaption{margin-top:6px;font-size:14px}a{color:#254d75}</style><main><a href="index.html">Открыть прототип</a><h1>Синий акцент</h1><a href="#mobile">Android и iOS</a> · <a href="#compact-web">Компактный веб</a> · <a href="#wide">Широкий веб</a><h2 id="mobile">Android и iOS · телефон</h2>'+rows.slice(0,mobileCount).join('')+'<h2 id="compact-web">Компактный веб</h2>'+rows.slice(wideEnd).join('')+'<h2 id="wide">Широкий веб</h2>'+rows.slice(mobileCount,wideEnd).join('')+'</main></html>');
+    for(const width of [680,1280]){
+      await page.setViewportSize({width,height:880});
+      for(const theme of ['light','dark']){
+        for(const screen of ['catalog','booking','profile']){
+          await page.goto(url+'?platform=web&screen='+screen+'&theme='+theme);
+          await useApplicationViewport(page);
+          const header=await phone.locator('header').evaluate(el=>{
+            const {borderRadius}=getComputedStyle(el);
+            const center=box=>box.top+box.height/2;
+            const bounds=el.getBoundingClientRect();
+            return {height:bounds.height,borderRadius,brand:center(el.querySelector('.brand>b').getBoundingClientRect()),
+              city:center(el.querySelector('#city').getBoundingClientRect())};
+          });
+          assert.deepEqual(header,{height:84,borderRadius:'0px 0px 24px 24px',brand:42,city:42});
+          assert.equal(await page.getByRole('searchbox').isVisible(),screen==='catalog');
+        }
+      }
+    }
+    await page.setViewportSize({width:390,height:844});
+    const scroller=page.locator('#scroll');
+    for(const platform of ['web','mobile']){
+      await page.goto(url+'?platform='+platform);
+      await useApplicationViewport(page);
+      assert.equal(await phone.locator('.brand>b').evaluate(el=>getComputedStyle(el).letterSpacing),
+        platform==='web'?'-2px':'-1px');
+    }
+    assert.equal(await page.getByRole('searchbox').isVisible(),true);
+    await scroller.hover();
+    await page.mouse.wheel(0,270);
+    await page.waitForFunction(()=>getComputedStyle(document.getElementById('search-box')).opacity==='0');
+    const offset=await scroller.evaluate(el=>el.scrollTop);
+    for(const leave of [
+      page.locator('nav [data-go=profile]'),
+      page.locator('nav [data-go=booking]'),
+      page.locator('#results .row').nth(3),
+    ]){
+      await leave.click();
+      await page.locator('nav [data-go=catalog]:visible, [data-go=catalog].icon-back:visible').click();
+      assert.equal(await scroller.evaluate(el=>el.scrollTop),offset);
+      assert.equal(await page.locator('#search-box').evaluate(el=>getComputedStyle(el).opacity),'0');
+    }
+    await scroller.hover();
+    await page.mouse.wheel(0,-35);
+    await page.waitForFunction(()=>getComputedStyle(document.getElementById('search-box')).opacity==='1');
+    await page.setViewportSize({width:920,height:880});
     await page.goto(url+'?layout=phone');
     const scroll=page.locator('#scroll');
     for(const theme of ['light','dark']){
@@ -214,7 +267,7 @@ async function exportScreens() {
     await page.goto(pathToFileURL(path.join(__dirname,'overview.html')).href);
     assert.equal(await page.locator('img').count(),previews.length*2);
     assert.deepEqual(errors,[]);
-    console.log(previews.length*2+' PNG exported; scroll collapse/reveal, themes, search, detail, call preview and overview checked.');
+    console.log(previews.length*2+' PNG exported; wide web headers, platform tracking, mobile catalog return, themes, search, detail and overview checked.');
   } finally {
     await browser.close();
   }

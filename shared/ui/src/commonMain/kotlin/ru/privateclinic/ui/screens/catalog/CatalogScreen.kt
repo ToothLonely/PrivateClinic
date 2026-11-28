@@ -43,11 +43,18 @@ import ru.privateclinic.ui.theme.ClinicTheme
 import ru.privateclinic.ui.theme.ThemeChoice
 
 @Composable
-internal fun CatalogScreen(wide: Boolean, search: String, branches: List<PreviewBranch>, onSearch: (String) -> Unit) {
-    val scroll = rememberScrollState()
+internal fun CatalogScreen(
+    wide: Boolean,
+    search: String,
+    branches: List<PreviewBranch>,
+    compactScrollState: CatalogScrollState? = null,
+    onSearch: (String) -> Unit,
+) {
+    val scroll = compactScrollState?.scroll ?: rememberScrollState()
     val density = LocalDensity.current
     val focus = LocalFocusManager.current
-    var showSearch by remember(wide) { mutableStateOf(true) }
+    val searchVisibility = compactScrollState?.showSearch ?: remember(wide) { mutableStateOf(true) }
+    var showSearch by searchVisibility
     LaunchedEffect(scroll, wide, density) {
         if (wide) return@LaunchedEffect
         var previous = scroll.value
@@ -57,6 +64,7 @@ internal fun CatalogScreen(wide: Boolean, search: String, branches: List<Preview
         snapshotFlow { scroll.value }.collect { y ->
             val delta = y - previous
             previous = y
+            if (delta == 0) return@collect
             travel = if (delta.sign == travel.sign) travel + delta else delta
             if (y < 2 || travel < -threshold) showSearch = true
             if (y > start && travel > threshold && showSearch) {

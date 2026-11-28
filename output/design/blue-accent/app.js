@@ -32,6 +32,9 @@ const shortTypes = ['Все типы','Общий профиль','Стомат�
 const radii = ['Весь город','До 5 км','До 10 км','До 15 км'];
 const demoDistances = [1,4,2,7,9,6,12,14,16,3,11,13];
 const params = new URLSearchParams(location.search);
+const platform = $('platform');
+platform.value = params.get('platform') === 'mobile' ? 'mobile' : 'web';
+$('phone').dataset.platform = platform.value;
 const requestedScreen = params.get('screen');
 let page = Object.hasOwn(pages, requestedScreen) ? requestedScreen : ({unavailable:'booking', cancel:'confirmed', settings:'profile', medical:'booking', location:'catalog'}[requestedScreen] || 'catalog');
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
@@ -82,6 +85,7 @@ function useAccount(next) {
   favorites = next.favorites;
 }
 let previousY = 0, travel = 0, catalogY = 0;
+let catalogSearchVisible = true;
 const go = (label,to,cls='secondary') => '<button class="'+cls+'" data-go="'+to+'">'+label+'</button>';
 const back = to => `<button class="back icon-back" data-go="${to}" aria-label="Назад">${icon('back')}</button>`;
 const disc = name => '<span class="disc">'+icon(name)+'</span>';
@@ -286,13 +290,16 @@ function showSearch(show) {
   $('search-box').classList.toggle('collapsed',!show);
   $('search-box').inert = !show;
 }
+function compactLayout() {
+  return !wideWindow.matches || $('layout').value === 'phone';
+}
 function render(restoreY=0) {
   resetPull();
   applyTheme();
   $('phone').dataset.screen = page;
   $('page').value = page;
+  showSearch(page !== 'catalog' || platform.value !== 'mobile' || !compactLayout() || catalogSearchVisible);
   $('search-box').hidden = page!=='catalog';
-  showSearch(true);
   $('query').value = query;
   $('content').innerHTML = content();
   $('visit-actions').hidden = page!=='confirmed' || !selectedVisit();
@@ -348,13 +355,18 @@ $('query').addEventListener('input',e=>{
   $('scroll').scrollTop=0;
 });
 $('scroll').addEventListener('scroll',()=>{
-  if(page!=='catalog' || (wideWindow.matches && $('layout').value!=='phone')) return;
+  if(page!=='catalog' || !compactLayout()) return;
   const y=$('scroll').scrollTop, delta=y-previousY;
   previousY=y;
+  if (delta === 0) return;
   travel=Math.sign(delta)===Math.sign(travel)?travel+delta:delta;
-  if (y<2 || travel < -10) showSearch(true);
+  if (y<2 || travel < -10) {
+    catalogSearchVisible = true;
+    showSearch(true);
+  }
   else if (y>48 && travel>10) {
     if(document.activeElement===$('query')) $('query').blur();
+    catalogSearchVisible = false;
     showSearch(false);
   }
 },{passive:true});
@@ -417,7 +429,7 @@ document.addEventListener('click',e=>{
   else if ('clinic' in d) {current=Number(d.clinic); origin=page; navigate('detail');}
   else if ('save' in d) {if(favorites.has(current)) favorites.delete(current); else favorites.add(current); btn.setAttribute("aria-pressed", String(favorites.has(current)));}
   else if ('contact' in d) $('message').textContent=d.contact==='call'?'В приложении откроется набор номера филиала.':'В приложении откроется официальный сайт филиала.';
-  else if ('reset' in d) {type=radius=pendingRadius=catalogY=0; query=''; render();}
+  else if ('reset' in d) {type=radius=pendingRadius=catalogY=0; catalogSearchVisible=true; query=''; render();}
   else if ('geo' in d) {
     geo = d.geo === 'yes';
     radius = geo ? (pendingRadius || radius) : 0;
@@ -518,7 +530,7 @@ function syncLayout(){
   $('adaptive-style').media=$('layout').value==='phone'?'not all':wideWindow.media;
   previousY=$('scroll').scrollTop;
   travel=0;
-  showSearch(true);
+  showSearch(platform.value !== 'mobile' || !compactLayout() || catalogSearchVisible);
 }
 syncLayout();
 wideWindow.addEventListener('change',syncLayout);
@@ -527,6 +539,13 @@ $('layout').onchange=e=>{
   const url=new URL(location.href);
   url.searchParams.set('layout',e.target.value);
   history.replaceState(null,'',url);
+};
+platform.onchange=()=>{
+  $('phone').dataset.platform = platform.value;
+  syncLayout();
+  const url = new URL(location.href);
+  url.searchParams.set('platform', platform.value);
+  history.replaceState(null, '', url);
 };
 $('page').onchange=e=>{
   if (['confirmed','reschedule'].includes(e.target.value) && !selectedVisit()) {

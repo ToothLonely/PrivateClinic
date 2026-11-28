@@ -9,6 +9,7 @@ button,input,select {font:inherit} button {cursor:pointer;border:0;color:inherit
 header {background:var(--header);color:var(--header-ink);border-radius:0 0 24px 24px;padding:10px 20px 16px;flex:none}
 .status,.brand {display:flex;justify-content:space-between;align-items:center}
 .status {font-size:13px;padding:0 4px}.brand {margin-top:13px}.brand>b {font-size:29px;font-weight:900;line-height:1;letter-spacing:-2px}.brand span,.address {display:inline-flex;align-items:center;gap:5px}.brand span {font-weight:650;font-size:14px}
+[data-platform=mobile] .brand>b {letter-spacing:-1px}
 svg {width:20px;height:20px;flex:none;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
 #search-box {display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows 200ms ease,opacity 180ms ease,transform 200ms ease}
 #search-box>div {min-height:0;overflow:hidden}

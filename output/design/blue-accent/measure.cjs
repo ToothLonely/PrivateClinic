@@ -16,6 +16,7 @@ async function useApplicationViewport(page) {
 async function main() {
   const { values } = parseArgs({ options: {
     screen: { type: 'string', default: 'catalog' }, theme: { type: 'string', default: 'light' },
+    platform: { type: 'string', default: 'web' },
     width: { type: 'string', default: '390' }, height: { type: 'string', default: '844' },
     selector: { type: 'string', default: '#phone, #phone *' }, menu: { type: 'string' },
     example: { type: 'string' }, png: { type: 'string' },
@@ -25,11 +26,12 @@ async function main() {
   const width = Number(values.width), height = Number(values.height);
   if (![width, height].every(n => Number.isInteger(n) && n > 0)) throw Error('Expected positive integer viewport dimensions');
   if (!['light', 'dark'].includes(values.theme)) throw Error('Use light or dark');
+  if (!['web', 'mobile'].includes(values.platform)) throw Error('Use web or mobile');
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
   try {
     const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
     const url = pathToFileURL(path.join(__dirname, 'index.html'));
-    for (const key of ['screen', 'theme', 'menu', 'example']) if (values[key]) url.searchParams.set(key, values[key]);
+    for (const key of ['screen', 'theme', 'platform', 'menu', 'example']) if (values[key]) url.searchParams.set(key, values[key]);
     await page.goto(url.href);
     const screen = await page.locator('#phone').getAttribute('data-screen');
     if (screen !== ({ unavailable: 'booking', cancel: 'confirmed' }[values.screen] ?? values.screen)) {
@@ -70,7 +72,7 @@ async function main() {
     });
     if (!elements.length) throw Error('No visible element matches ' + values.selector);
     if (values.png) await page.locator('#phone').screenshot({ path: values.png });
-    console.log(JSON.stringify({ screen: await page.locator('#phone').getAttribute('data-screen'), requestedScreen: values.screen, theme: await page.locator('#phone').getAttribute('data-theme'), width, height, dpr: 1, unit: 'CSS px', elements }, null, 2));
+    console.log(JSON.stringify({ screen: await page.locator('#phone').getAttribute('data-screen'), requestedScreen: values.screen, theme: await page.locator('#phone').getAttribute('data-theme'), platform: values.platform, width, height, dpr: 1, unit: 'CSS px', elements }, null, 2));
   } finally { await browser.close(); }
 }
 module.exports = { useApplicationViewport };

@@ -4,6 +4,7 @@ aside {display:flex;align-items:center;justify-content:flex-end;gap:18px;padding
 aside strong {margin-right:auto;font-size:15px} aside label {display:flex;align-items:center} aside select {width:auto;padding:5px 8px}
 #phone {width:100%;height:calc(100dvh - 64px);min-height:330px;border-radius:24px}
 header {display:grid;align-items:center;grid-template-columns:minmax(0,1fr) minmax(240px,38%) minmax(0,1fr);column-gap:12px;padding:20px clamp(18px,3vw,44px);border-radius:0}
+[data-platform=web] header {min-height:84px;border-radius:0 0 24px 24px}
 header[hidden],.status {display:none}
 .brand {display:contents}
 .brand>b {grid-area:1 / 1;display:flex;align-items:center;gap:12px;font-size:30px}
