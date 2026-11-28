@@ -140,6 +140,15 @@ async function compare(url, directory) {
         }
       }
     }
+    // A taller compact viewport exposes every card without changing the catalog layout.
+    // Compare the last row to catch accumulated differences in row height.
+    await app.setViewportSize({ width: 390, height: 1550 });
+    await reference.setViewportSize({ width: 390, height: 1550 });
+    await app.emulateMedia({ colorScheme: 'light' });
+    await reference.emulateMedia({ colorScheme: 'light' });
+    await app.goto(url);
+    await openReference('catalog');
+    await compareBounds('Амадея', '#results .row:last-child strong', textPosition);
     assert.deepEqual(errors, []);
   } finally { await browser.close(); }
 }
